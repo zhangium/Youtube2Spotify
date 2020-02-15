@@ -65,7 +65,7 @@ class CreatePlaylist:
                     "artist": artist,
 
                     # add the uri, easy to get song to put into playlist
-                    "spotify_uri":self.get_spotify_uri(song_name,artist)
+                    "spotify_uri": self.get_spotify_uri(song_name, artist)
 
                 }
 
