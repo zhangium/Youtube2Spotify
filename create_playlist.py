@@ -27,11 +27,13 @@ class CreatePlaylist:
 
         # Get credentials and create an API client
         scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(client_secrets_file, scopes)
+        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+            client_secrets_file, scopes)
         credentials = flow.run_console()
 
         # from the Youtube DATA API
-        youtube_client = googleapiclient.discovery.build(api_service_name, api_version, credentials=credentials)
+        youtube_client = googleapiclient.discovery.build(
+            api_service_name, api_version, credentials=credentials)
 
         return youtube_client
 
@@ -46,10 +48,12 @@ class CreatePlaylist:
         # collect each video and get important information
         for item in response["items"]:
             video_title = item["snippet"]["title"]
-            youtube_url = "https://www.youtube.com/watch?v={}".format(item["id"])
+            youtube_url = "https://www.youtube.com/watch?v={}".format(
+                item["id"])
 
             # use youtube_dl to collect the song name & artist name
-            video = youtube_dl.YoutubeDL({}).extract_info(youtube_url, download=False)
+            video = youtube_dl.YoutubeDL({}).extract_info(
+                youtube_url, download=False)
             song_name = video["track"]
             artist = video["artist"]
 
@@ -61,7 +65,7 @@ class CreatePlaylist:
                     "artist": artist,
 
                     # add the uri, easy to get song to put into playlist
-                    "spotify_uri":self.get_spotify_uri(song_name,artist)
+                    "spotify_uri": self.get_spotify_uri(song_name, artist)
 
                 }
 
@@ -73,7 +77,8 @@ class CreatePlaylist:
             "public": True
         })
 
-        query = "https://api.spotify.com/v1/users/{}/playlists".format(spotify_user_id)
+        query = "https://api.spotify.com/v1/users/{}/playlists".format(
+            spotify_user_id)
         response = requests.post(
             query,
             data=request_body,
@@ -114,7 +119,8 @@ class CreatePlaylist:
         self.get_liked_videos()
 
         # collect all of uri
-        uris = [info["spotify_uri"] for song, info in self.all_song_info.items()]
+        uris = [info["spotify_uri"]
+                for song, info in self.all_song_info.items()]
 
         # create a new playlist
         playlist_id = self.create_playlist()
@@ -122,7 +128,8 @@ class CreatePlaylist:
         # add all songs into new playlist
         request_data = json.dumps(uris)
 
-        query = "https://api.spotify.com/v1/playlists/{}/tracks".format(playlist_id)
+        query = "https://api.spotify.com/v1/playlists/{}/tracks".format(
+            playlist_id)
 
         response = requests.post(
             query,
