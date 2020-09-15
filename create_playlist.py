@@ -6,6 +6,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import requests
 import youtube_dl
+youtube_dl.utils.std_headers['User-Agent'] = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
 
 from exceptions import ResponseException
 from secrets import spotify_token, spotify_user_id
@@ -38,43 +39,54 @@ class CreatePlaylist:
 
         return youtube_client
 
-    def get_liked_videos(self):
-        """Grab Our Liked Videos & Create A Dictionary Of Important Song Information"""
-        request = self.youtube_client.videos().list(
-            part="snippet,contentDetails,statistics",
-            myRating="like"
+    def get_playlist_videos(self):
+        """Grab Our YouTube playlist videos & Create A Dictionary Of Important Song Information"""
+        request = self.youtube_client.playlists().list(
+            part="snippet,contentDetails,id",
+            mine="True"
         )
         response = request.execute()
-
         # collect each video and get important information
-        for item in response["items"]:
-            video_title = item["snippet"]["title"]
-            youtube_url = "https://www.youtube.com/watch?v={}".format(
-                item["id"])
+        for item_pl in response["items"]:
+            request = self.youtube_client.playlistItems().list(
+                part="snippet, contentDetails, id",
+                playlistId=item_pl["id"]
+            )
 
-            # use youtube_dl to collect the song name & artist name
-            video = youtube_dl.YoutubeDL({}).extract_info(
-                youtube_url, download=False)
-            song_name = video["track"]
-            artist = video["artist"]
+            response_vid = request.execute()
 
-            if song_name is not None and artist is not None:
-                # save all important info and skip any missing song and artist
-                self.all_song_info[video_title] = {
-                    "youtube_url": youtube_url,
-                    "song_name": song_name,
-                    "artist": artist,
+            for item in response_vid["items"]:
+                video_title = item["snippet"]["title"]
+                youtube_url = "https://www.youtube.com/watch?v={}".format(
+                    item["snippet"]["resourceId"]["videoId"])
+                print('YouTube video', item)
+                # use youtube_dl to collect the song name & artist name
+                try:
+                    video = youtube_dl.YoutubeDL({}).extract_info(
+                        youtube_url, download=False)
+                except:
+                    ResponseException("YoutubeDL uh oh")
+                    continue
 
-                    # add the uri, easy to get song to put into playlist
-                    "spotify_uri": self.get_spotify_uri(song_name, artist)
+                song_name = video["track"]
+                artist = video["artist"]
+                if song_name is not None and artist is not None:
+                    # save all important info and skip any missing song and artist
+                    self.all_song_info[video_title] = {
+                        "youtube_url": youtube_url,
+                        "song_name": song_name,
+                        "artist": artist,
+
+                        # add the uri, easy to get song to put into playlist
+                        "spotify_uri": self.get_spotify_uri(song_name, artist)
 
                 }
 
     def create_playlist(self):
         """Create A New Playlist"""
         request_body = json.dumps({
-            "name": "Youtube Liked Vids",
-            "description": "All Liked Youtube Videos",
+            "name": "Test Playlist",
+            "description": "a generated playlist from youtube",
             "public": True
         })
 
@@ -89,6 +101,7 @@ class CreatePlaylist:
             }
         )
         response_json = response.json()
+        print("SPOTIFY is creating playlist: ", response_json)
 
         # playlist id
         return response_json["id"]
@@ -116,8 +129,8 @@ class CreatePlaylist:
 
     def add_song_to_playlist(self):
         """Add all liked songs into a new Spotify playlist"""
-        # populate dictionary with our liked songs
-        self.get_liked_videos()
+        # populate dictionary with our YouTube playlists songs
+        self.get_playlist_videos()
 
         # collect all of uri
         uris = [info["spotify_uri"]
