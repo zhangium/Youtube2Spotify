@@ -1,5 +1,8 @@
-# SpotifyGeneratePlaylist
-A simple script that takes your liked videos on Youtube, and generates a Spotify playlist based on the song in your liked videos.
+# Youtube2Spotify
+
+A simple script that takes a playlist on Youtube, and generates a Spotify playlist based on the song videos in the playlist.
+
+Note: Based off of original code from SpotifyGeneratePlaylist repository by TheComeUp! Modified some code to get it working for personal uses.
 
 ## Table of Contents
 * [Video](#Video)
